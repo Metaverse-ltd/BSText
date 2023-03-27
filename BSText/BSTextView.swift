@@ -2903,7 +2903,7 @@ open class BSTextView: UIScrollView, UITextInput, UITextInputTraits, UIScrollVie
         addSubview(_selectionView)
         
         self.debugOption = TextDebugOption.shared
-        TextDebugOption.add(self)
+        // TextDebugOption.add(self)
         
         _updateInnerContainerSize()
         _update()
@@ -2931,7 +2931,7 @@ open class BSTextView: UIScrollView, UITextInput, UITextInputTraits, UIScrollVie
         TextEffectWindow.shared?.hide(_magnifierCaret)
         TextEffectWindow.shared?.hide(_magnifierRanged)
         
-        TextDebugOption.remove(self)
+        // TextDebugOption.remove(self)
         
         _longPressTimer?.invalidate()
         _autoScrollTimer?.invalidate()

@@ -1131,7 +1131,7 @@ open class BSLabel: UIView, TextDebugTarget, TextAsyncLayerDelegate, NSSecureCod
         layer.contentsScale = UIScreen.main.scale
         contentMode = .redraw
         
-        TextDebugOption.add(self)
+        // TextDebugOption.add(self)
         
         innerContainer.truncationType = .end
         innerContainer.maximumNumberOfRows = numberOfLines
@@ -1150,7 +1150,7 @@ open class BSLabel: UIView, TextDebugTarget, TextAsyncLayerDelegate, NSSecureCod
     }
     
     deinit {
-        TextDebugOption.remove(self)
+        // TextDebugOption.remove(self)
         longPressTimer?.invalidate()
     }
     
