@@ -188,9 +188,6 @@ import UIKit
             guard let ws = TextUtilities.sharedApplication?.windows else {
                 return nil
             }
-            if #available(iOS 13, *) {
-                return super.rootViewController
-            }
             for window in ws {
                 if self == window {
                     continue
