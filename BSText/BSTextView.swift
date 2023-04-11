@@ -2398,7 +2398,7 @@ open class BSTextView: UIScrollView, UITextInput, UITextInputTraits, UIScrollVie
         
         _setText(_innerText.bs_plainText(for: NSRange(location: 0, length: _innerText.length)))
         _setFont(font)
-        _setTextColor(color)
+        //_setTextColor(color)
         _setTextAlignment(style!.alignment)
         _setSelectedRange(_selectedTextRange.asRange)
         _setTypingAttributes(_typingAttributesHolder.bs_attributes)
