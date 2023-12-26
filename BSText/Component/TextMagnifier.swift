@@ -149,62 +149,54 @@ fileprivate class TextMagnifierCaret: TextMagnifier {
         rect.size = size
         rect.origin = CGPoint.zero
         rect = rect.insetBy(dx: kPadding, dy: kPadding)
-        UIGraphicsBeginImageContextWithOptions(size, _: false, _: 0)
-        let context = UIGraphicsGetCurrentContext()!
-        
-        let boxPath = CGPath(rect: CGRect(x: 0, y: 0, width: size.width, height: size.height), transform: nil)
-        let fillPath = CGPath(ellipseIn: rect, transform: nil)
-        let strokePath = CGPath(ellipseIn: TextUtilities.textCGRect(pixelHalf: rect), transform: nil)
-        // inner shadow
-        context.saveGState()
-        do {
-            let blurRadius: CGFloat = 25
-            let offset = CGSize(width: 0, height: 15)
-            let shadowColor = UIColor(white: 0, alpha: 0.16).cgColor
-            let opaqueShadowColor = shadowColor.copy(alpha: 1)
+        let renderer = UIGraphicsImageRenderer(size: size)
+        image = renderer.image { ctx in
+            let context = ctx.cgContext
+
+            let boxPath = CGPath(rect: CGRect(x: 0, y: 0, width: size.width, height: size.height), transform: nil)
+            let fillPath = CGPath(ellipseIn: rect, transform: nil)
+            let strokePath = CGPath(ellipseIn: TextUtilities.textCGRect(pixelHalf: rect), transform: nil)
+
+            // 内阴影
+            context.saveGState()
+            let innerShadowBlurRadius: CGFloat = 25
+            let innerShadowOffset = CGSize(width: 0, height: 15)
+            let innerShadowColor = UIColor(white: 0, alpha: 0.16).cgColor
+            let opaqueInnerShadowColor = innerShadowColor.copy(alpha: 1)
             context.addPath(fillPath)
             context.clip()
-            context.setAlpha(shadowColor.alpha)
+            context.setAlpha(innerShadowColor.alpha)
             context.beginTransparencyLayer(auxiliaryInfo: nil)
-            do {
-                context.setShadow(offset: offset, blur: blurRadius, color: opaqueShadowColor)
-                context.setBlendMode(CGBlendMode.sourceOut)
-                context.setFillColor(opaqueShadowColor!)
-                context.addPath(fillPath)
-                context.fillPath()
-            }
+            context.setShadow(offset: innerShadowOffset, blur: innerShadowBlurRadius, color: opaqueInnerShadowColor)
+            context.setBlendMode(.sourceOut)
+            context.setFillColor(opaqueInnerShadowColor!)
+            context.addPath(fillPath)
+            context.fillPath()
             context.endTransparencyLayer()
-        }
-        context.restoreGState()
-        
-        // outer shadow
-        context.saveGState()
-        do {
+            context.restoreGState()
+
+            // 外阴影
+            context.saveGState()
             context.addPath(boxPath)
             context.addPath(fillPath)
             context.clip(using: .evenOdd)
-            let shadowColor = UIColor(white: 0, alpha: 0.32).cgColor
-            context.setShadow(offset: CGSize(width: 0, height: 1.5), blur: 3, color: shadowColor)
+            let outerShadowColor = UIColor(white: 0, alpha: 0.32).cgColor
+            context.setShadow(offset: CGSize(width: 0, height: 1.5), blur: 3, color: outerShadowColor)
             context.beginTransparencyLayer(auxiliaryInfo: nil)
-            do {
-                context.addPath(fillPath)
-                UIColor(white: 0.7, alpha: 1).setFill()
-                context.fillPath()
-            }
+            context.addPath(fillPath)
+            UIColor(white: 0.7, alpha: 1).setFill()
+            context.fillPath()
             context.endTransparencyLayer()
-        }
-        context.restoreGState()
-        // stroke
-        context.saveGState()
-        do {
+            context.restoreGState()
+
+            // 描边
+            context.saveGState()
             context.addPath(strokePath)
             UIColor(white: 0.6, alpha: 1).setStroke()
             context.setLineWidth(TextUtilities.textCGFloat(fromPixel: 1))
             context.strokePath()
+            context.restoreGState()
         }
-        context.restoreGState()
-        image = UIGraphicsGetImageFromCurrentImageContext()
-        UIGraphicsEndImageContext()
 
         return image
     }
@@ -290,86 +282,87 @@ fileprivate class TextMagnifierRanged: TextMagnifier {
         var rect = CGRect()
         rect.size = size
         rect.origin = CGPoint.zero
-        UIGraphicsBeginImageContextWithOptions(size, _: false, _: 0)
-        let context = UIGraphicsGetCurrentContext()!
-        let boxPath = CGPath(rect: rect, transform: nil)
-        let path = CGMutablePath()
-        path.move(to: CGPoint(x: kPadding + kRadius, y: kPadding), transform: .identity)
-        path.addLine(to: CGPoint(x: size.width - kPadding - kRadius, y: kPadding), transform: .identity)
-        path.addQuadCurve(to: CGPoint(x: size.width - kPadding, y: kPadding + kRadius), control: CGPoint(x: size.width - kPadding, y: kPadding), transform: .identity)
-        path.addLine(to: CGPoint(x: size.width - kPadding, y: kHeight), transform: .identity)
-        path.addCurve(to: CGPoint(x: size.width - kPadding - kRadius, y: kPadding + kHeight), control1: CGPoint(x: size.width - kPadding, y: kPadding + kHeight), control2: CGPoint(x: size.width - kPadding - kRadius, y: kPadding + kHeight), transform: .identity)
-        path.addLine(to: CGPoint(x: size.width / 2 + kArrow, y: kPadding + kHeight), transform: .identity)
-        path.addLine(to: CGPoint(x: size.width / 2, y: kPadding + kHeight + kArrow), transform: .identity)
-        path.addLine(to: CGPoint(x: size.width / 2 - kArrow, y: kPadding + kHeight), transform: .identity)
-        path.addLine(to: CGPoint(x: kPadding + kRadius, y: kPadding + kHeight), transform: .identity)
-        path.addQuadCurve(to: CGPoint(x: kPadding, y: kHeight), control: CGPoint(x: kPadding, y: kPadding + kHeight), transform: .identity)
-        path.addLine(to: CGPoint(x: kPadding, y: kPadding + kRadius), transform: .identity)
-        path.addQuadCurve(to: CGPoint(x: kPadding + kRadius, y: kPadding), control: CGPoint(x: kPadding, y: kPadding), transform: .identity)
-        path.closeSubpath()
-        let arrowPath = CGMutablePath()
-        arrowPath.move(to: CGPoint(x: size.width / 2 - kArrow, y: TextUtilities.textCGFloat(pixelFloor: kPadding) + kHeight), transform: .identity)
-        arrowPath.addLine(to: CGPoint(x: size.width / 2 + kArrow, y: TextUtilities.textCGFloat(pixelFloor: kPadding) + kHeight), transform: .identity)
-        arrowPath.addLine(to: CGPoint(x: size.width / 2, y: kPadding + kHeight + kArrow), transform: .identity)
-        arrowPath.closeSubpath()
-        // inner shadow
-        context.saveGState()
-        do {
-            let blurRadius: CGFloat = 25
-            let offset = CGSize(width: 0, height: 15)
-            let shadowColor = UIColor(white: 0, alpha: 0.16).cgColor
-            let opaqueShadowColor = shadowColor.copy(alpha: 1.0)
-            context.addPath(path)
-            context.clip()
-            context.setAlpha(shadowColor.alpha)
-            context.beginTransparencyLayer(auxiliaryInfo: nil)
+        let renderer = UIGraphicsImageRenderer(size: size)
+        image  = renderer.image { ctx in
+            let context = ctx.cgContext
+            let boxPath = CGPath(rect: rect, transform: nil)
+            let path = CGMutablePath()
+            path.move(to: CGPoint(x: kPadding + kRadius, y: kPadding), transform: .identity)
+            path.addLine(to: CGPoint(x: size.width - kPadding - kRadius, y: kPadding), transform: .identity)
+            path.addQuadCurve(to: CGPoint(x: size.width - kPadding, y: kPadding + kRadius), control: CGPoint(x: size.width - kPadding, y: kPadding), transform: .identity)
+            path.addLine(to: CGPoint(x: size.width - kPadding, y: kHeight), transform: .identity)
+            path.addCurve(to: CGPoint(x: size.width - kPadding - kRadius, y: kPadding + kHeight), control1: CGPoint(x: size.width - kPadding, y: kPadding + kHeight), control2: CGPoint(x: size.width - kPadding - kRadius, y: kPadding + kHeight), transform: .identity)
+            path.addLine(to: CGPoint(x: size.width / 2 + kArrow, y: kPadding + kHeight), transform: .identity)
+            path.addLine(to: CGPoint(x: size.width / 2, y: kPadding + kHeight + kArrow), transform: .identity)
+            path.addLine(to: CGPoint(x: size.width / 2 - kArrow, y: kPadding + kHeight), transform: .identity)
+            path.addLine(to: CGPoint(x: kPadding + kRadius, y: kPadding + kHeight), transform: .identity)
+            path.addQuadCurve(to: CGPoint(x: kPadding, y: kHeight), control: CGPoint(x: kPadding, y: kPadding + kHeight), transform: .identity)
+            path.addLine(to: CGPoint(x: kPadding, y: kPadding + kRadius), transform: .identity)
+            path.addQuadCurve(to: CGPoint(x: kPadding + kRadius, y: kPadding), control: CGPoint(x: kPadding, y: kPadding), transform: .identity)
+            path.closeSubpath()
+            let arrowPath = CGMutablePath()
+            arrowPath.move(to: CGPoint(x: size.width / 2 - kArrow, y: TextUtilities.textCGFloat(pixelFloor: kPadding) + kHeight), transform: .identity)
+            arrowPath.addLine(to: CGPoint(x: size.width / 2 + kArrow, y: TextUtilities.textCGFloat(pixelFloor: kPadding) + kHeight), transform: .identity)
+            arrowPath.addLine(to: CGPoint(x: size.width / 2, y: kPadding + kHeight + kArrow), transform: .identity)
+            arrowPath.closeSubpath()
+            
+            // inner shadow
+            context.saveGState()
             do {
-                context.setShadow(offset: offset, blur: blurRadius, color: opaqueShadowColor)
-                context.setBlendMode(CGBlendMode.sourceOut)
-                context.setFillColor(opaqueShadowColor!)
+                let blurRadius: CGFloat = 25
+                let offset = CGSize(width: 0, height: 15)
+                let shadowColor = UIColor(white: 0, alpha: 0.16).cgColor
+                let opaqueShadowColor = shadowColor.copy(alpha: 1.0)
                 context.addPath(path)
+                context.clip()
+                context.setAlpha(shadowColor.alpha)
+                context.beginTransparencyLayer(auxiliaryInfo: nil)
+                do {
+                    context.setShadow(offset: offset, blur: blurRadius, color: opaqueShadowColor)
+                    context.setBlendMode(CGBlendMode.sourceOut)
+                    context.setFillColor(opaqueShadowColor!)
+                    context.addPath(path)
+                    context.fillPath()
+                }
+                context.endTransparencyLayer()
+            }
+            context.restoreGState()
+            // outer shadow
+            context.saveGState()
+            do {
+                context.addPath(boxPath)
+                context.addPath(path)
+                context.clip(using: .evenOdd)
+                let shadowColor = UIColor(white: 0, alpha: 0.32).cgColor
+                context.setShadow(offset: CGSize(width: 0, height: 1.5), blur: 3, color: shadowColor)
+                context.beginTransparencyLayer(auxiliaryInfo: nil)
+                do {
+                    context.addPath(path)
+                    UIColor(white: 0.7, alpha: 1.000).setFill()
+                    context.fillPath()
+                }
+                context.endTransparencyLayer()
+            }
+            context.restoreGState()
+            
+            // arrow
+            context.saveGState()
+            do {
+                context.addPath(arrowPath)
+                UIColor(white: 1, alpha: 0.95).set()
                 context.fillPath()
             }
-            context.endTransparencyLayer()
-        }
-        context.restoreGState()
-        // outer shadow
-        context.saveGState()
-        do {
-            context.addPath(boxPath)
-            context.addPath(path)
-            context.clip(using: .evenOdd)
-            let shadowColor = UIColor(white: 0, alpha: 0.32).cgColor
-            context.setShadow(offset: CGSize(width: 0, height: 1.5), blur: 3, color: shadowColor)
-            context.beginTransparencyLayer(auxiliaryInfo: nil)
+            context.restoreGState()
+            // stroke
+            context.saveGState()
             do {
                 context.addPath(path)
-                UIColor(white: 0.7, alpha: 1.000).setFill()
-                context.fillPath()
+                UIColor(white: 0.6, alpha: 1).setStroke()
+                context.setLineWidth(TextUtilities.textCGFloat(fromPixel: 1))
+                context.strokePath()
             }
-            context.endTransparencyLayer()
+            context.restoreGState()
         }
-        context.restoreGState()
-        
-        // arrow
-        context.saveGState()
-        do {
-            context.addPath(arrowPath)
-            UIColor(white: 1, alpha: 0.95).set()
-            context.fillPath()
-        }
-        context.restoreGState()
-        // stroke
-        context.saveGState()
-        do {
-            context.addPath(path)
-            UIColor(white: 0.6, alpha: 1).setStroke()
-            context.setLineWidth(TextUtilities.textCGFloat(fromPixel: 1))
-            context.strokePath()
-        }
-        context.restoreGState()
-        image = UIGraphicsGetImageFromCurrentImageContext()
-        UIGraphicsEndImageContext()
         
         return image
     }

@@ -1148,15 +1148,16 @@ open class BSTextView: UIScrollView, UITextInput, UITextInputTraits, UIScrollVie
             let size: CGSize = layout.textBoundingSize
             let needDraw: Bool = size.width > 1 && size.height > 1
             if needDraw {
-                UIGraphicsBeginImageContextWithOptions(size, _: false, _: 0)
-                let context = UIGraphicsGetCurrentContext()
-                layout.draw(in: context, size: size, debug: debugOption)
-                let image: UIImage? = UIGraphicsGetImageFromCurrentImageContext()
-                UIGraphicsEndImageContext()
+                let format = UIGraphicsImageRendererFormat.preferred()
+                format.opaque = false
+                let render = UIGraphicsImageRenderer(size: size, format: format)
+                let image = render.image { renderContext in
+                    layout.draw(in: renderContext.cgContext, size: size, debug: debugOption)
+                }
                 _placeHolderView.image = image
-                frame.size = image?.size ?? CGSize.zero
+                frame.size = image.size
                 if container.isVerticalForm {
-                    frame.origin.x = bounds.size.width - (image?.size.width ?? 0)
+                    frame.origin.x = bounds.size.width - image.size.width
                 } else {
                     frame.origin = CGPoint.zero
                 }
